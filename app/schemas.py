@@ -1,4 +1,5 @@
 """Pydantic models: API request/response, the agent's plan, and document sections."""
+import re
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Literal, Optional
 
@@ -41,6 +42,18 @@ class Section(BaseModel):
         if isinstance(value, str):
             return [value]
         return [str(item) for item in value]
+
+    @field_validator("bullets", mode="after")
+    @classmethod
+    def _split_inline_bullets(cls, items):
+        """LLMs sometimes pack several bullets into one string with a bullet character; split them."""
+        cleaned = []
+        for item in items:
+            for part in re.split(r"\s*[•●▪]\s*", item):
+                part = re.sub(r"^[-*–]\s+", "", part.strip())
+                if part:
+                    cleaned.append(part)
+        return cleaned
 
     @field_validator("rows", mode="before")
     @classmethod
@@ -121,7 +134,23 @@ class Plan(BaseModel):
     audience: str = "Business stakeholders"
     assumptions: List[str] = Field(default_factory=list)
     conflicts: List[Conflict] = Field(default_factory=list)
+    timeline_weeks: Optional[int] = None  # total duration, if stated or assumed
+    budget_usd: Optional[int] = None  # total budget incl. contingency, if stated or assumed
     tasks: List[Task] = Field(min_length=2, max_length=10)
+
+    @field_validator("timeline_weeks", "budget_usd", mode="before")
+    @classmethod
+    def _lenient_number(cls, value):
+        if value is None or isinstance(value, bool):
+            return None
+        if isinstance(value, (int, float)):
+            number = value
+        else:
+            match = re.search(r"\d[\d,]*(?:\.\d+)?", str(value))
+            if not match:
+                return None
+            number = float(match.group().replace(",", ""))
+        return int(number) if number > 0 else None
 
     @field_validator("assumptions", mode="before")
     @classmethod

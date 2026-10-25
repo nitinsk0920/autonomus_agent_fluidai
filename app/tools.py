@@ -12,7 +12,7 @@ generated from the registry, so it learns about the tool automatically.
 import json
 import logging
 
-from app import llm
+from app import consistency, llm
 from app.schemas import AgentContext, Section, Task
 
 log = logging.getLogger("agent.tools")
@@ -88,7 +88,12 @@ MOCK_BUILDERS = {"budget": _budget, "timeline": _timeline, "team": _team, "risks
 
 
 def get_mock_data(task: Task, ctx: AgentContext) -> dict:
-    return MOCK_BUILDERS[task.data_type]()
+    data = MOCK_BUILDERS[task.data_type]()
+    if task.data_type == "budget":  # follow the plan's own figures instead of a generic template
+        data = consistency.scale_budget(data, ctx.plan.budget_usd)
+    elif task.data_type == "timeline":
+        data = consistency.fit_timeline(data, ctx.plan.timeline_weeks)
+    return data
 
 
 # ----------------------------------------------------------------------------
@@ -101,6 +106,9 @@ def context_block(ctx: AgentContext) -> str:
         f"ORIGINAL REQUEST: {ctx.request}",
         f"DOCUMENT: {plan.title} ({plan.doc_type}) for {plan.audience}",
     ]
+    fixed = consistency.fixed_figures(plan)
+    if fixed:
+        lines.append(fixed)
     if plan.assumptions:
         lines.append("ASSUMPTIONS:\n" + "\n".join(f"- {a}" for a in plan.assumptions))
     if plan.conflicts:
@@ -127,7 +135,7 @@ PROSE_SYSTEM = (
     '{"heading": "string", "paragraphs": ["string"], "bullets": ["string"]}\n'
     "Rules: 1-3 short paragraphs (2-4 sentences each); bullets are optional (max 6); be specific and "
     "concrete, no filler; use the supplied data where relevant and call figures estimates; follow the "
-    "stated assumptions and conflict resolutions; do not repeat other sections."
+    "stated assumptions and conflict resolutions; do not repeat other sections. Use measured language - never promise guarantees (say aims to / targets); do not map budget lines to individual weeks unless the data gives per-phase costs; if the budget or timeline looks tight for the scope, say so plainly and name the main risk."
 )
 
 TABLE_SYSTEM = (
@@ -159,6 +167,7 @@ def _generate_table(ctx: AgentContext, title: str, instruction: str, label: str)
     section = Section(**data)
     if not (section.columns and section.rows):
         raise ValueError("The model returned an empty table")
+    consistency.enforce_budget_total(ctx, section)  # LLMs cannot be trusted to add up
     return section
 
 
@@ -177,7 +186,7 @@ SUMMARY_SYSTEM = (
     "You write the EXECUTIVE SUMMARY of a business document. Reply with JSON only, in this shape:\n"
     '{"heading": "Executive Summary", "paragraphs": ["string"], "bullets": ["string"]}\n'
     "Rules: 1-2 short paragraphs plus 3-5 bullets with the key points. Mention the headline decisions "
-    "(assumptions and how conflicts were resolved). Only use facts that appear in the document content."
+    "(assumptions and how conflicts were resolved). Only use facts that appear in the document content. Be honest about the main feasibility risk and never promise guarantees."
 )
 
 

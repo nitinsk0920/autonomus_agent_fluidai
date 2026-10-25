@@ -12,7 +12,7 @@ from app.schemas import AgentContext, Reflection, ReviewIssue
 
 log = logging.getLogger("agent.reflection")
 
-MAX_ISSUES = 3
+MAX_ISSUES = 4
 
 REVIEW_SYSTEM = (
     "You are a strict reviewer of an AI-generated business document. Compare the DRAFT with the "
@@ -22,6 +22,11 @@ REVIEW_SYSTEM = (
     "3. The content is specific, not vague or generic filler.\n"
     "4. Numbers (budgets, dates, durations) are consistent across sections.\n"
     "5. No important section is missing (tasks marked FAILED have no content).\n"
+    "6. Money is allocated sensibly: flag costs mapped to weeks or phases in ways that make no sense.\n"
+    "7. No overclaiming: flag absolute promises (guarantees, 100%, zero risk) and flag a budget or timeline that is "
+    "implausible for the scope when the document never admits the feasibility risk.\n"
+    "8. No two sections (including the Executive Summary) largely repeat each other.\n"
+    "Report the most serious problems first.\n"
     "Reply with JSON only:\n"
     '{"verdict": "pass" or "revise", "issues": [{"section_index": 0, "problem": "...", "fix": "..."}]}\n'
     "section_index is the [number] of the faulty section, or null if a whole new section is missing. "

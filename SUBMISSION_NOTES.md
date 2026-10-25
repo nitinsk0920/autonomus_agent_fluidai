@@ -31,11 +31,16 @@ Test inputs
   requests are where drafts drift, and a review pass sees everything together.
 * Safety: if the reviewer fails, the request still completes (`verdict: skipped`).
 
-## 3. Debugging insight (1-2 min)  -- pick the one you actually hit
-Candidate grounded in this code: small LLMs return sloppy JSON (markdown fences, `rows` as dicts, tool names with odd
-casing, `"none"` instead of null). Root cause: trusting raw model output. Fix: `parse_json` tolerates fences/chatter,
-and lenient Pydantic validators coerce shapes, with a unit test (`test_plan_accepts_sloppy_llm_values`).
-Replace with your own real story if different.
+## 3. Debugging insight (1-2 min)  -- real story from testing
+Issue: on the complex request the agent's own reviewer "fixed" the document, yet the budget table summed to $96,300
+while the text said $91,300, and a 13-week mock timeline contradicted the 4-week assumption ("week 12" in the KPIs).
+Root cause: two things. (1) `get_mock_data` returned a generic template that ignored the plan's constraints.
+(2) An LLM reviewer can spot an inconsistency but cannot be trusted to do the arithmetic when rewriting.
+Fix: the plan now carries `timeline_weeks` and `budget_usd`; mock data is scaled to them, every prompt gets a
+"fixed figures" block, and `consistency.py` rescales a generated table's cost column in code (plus a Total row).
+Result on re-run: costs sum to exactly $20,000 and every section says 4 weeks. Unit tests reproduce the original failure.
+Second, shorter story (optional): Groq retired the default Llama models, every call 404'd; found via the error text +
+Groq's deprecation page; defaults changed and a 404 now skips straight to the fallback model.
 
 ## 4. Tradeoff (1-2 min)
 Autonomous planning vs deterministic workflow: the LLM chooses doc type and tasks (flexible, handles ambiguous requests)
