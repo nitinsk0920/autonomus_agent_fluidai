@@ -23,7 +23,7 @@ PLAN_SYSTEM = (
     "\"conflicts\" with a concrete \"resolution\" (e.g. phased rollout, reduced scope) that the document will follow. If the constraints cannot realistically all be met, say so in the resolution and name the residual risk.\n"
     "3. If no document type is given, pick the best one: project_plan, proposal, business_report, "
     "technical_design, sop, meeting_minutes or product_spec.\n"
-    "4. Create 5-9 tasks in logical order. Fetch data (get_mock_data) BEFORE the sections that need it. "
+    "4. Create 5-9 tasks in logical order (HARD LIMIT: never more than 9 - merge related sections instead). Fetch data (get_mock_data) BEFORE the sections that need it. "
     "Do NOT add an executive summary task - the agent adds one automatically.\n"
     "5. Each task needs a clear \"description\" of what the section must contain.\n\n"
     "6. Put the total duration in timeline_weeks and the total budget in budget_usd (plain numbers; null if unknown) and also list them in assumptions.\n\n"

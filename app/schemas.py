@@ -136,7 +136,7 @@ class Plan(BaseModel):
     conflicts: List[Conflict] = Field(default_factory=list)
     timeline_weeks: Optional[int] = None  # total duration, if stated or assumed
     budget_usd: Optional[int] = None  # total budget incl. contingency, if stated or assumed
-    tasks: List[Task] = Field(min_length=2, max_length=10)
+    tasks: List[Task] = Field(min_length=2, max_length=14)  # prompt asks for 5-9; tolerate models that overshoot
 
     @field_validator("timeline_weeks", "budget_usd", mode="before")
     @classmethod

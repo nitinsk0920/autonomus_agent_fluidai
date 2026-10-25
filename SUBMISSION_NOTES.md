@@ -44,5 +44,5 @@ Groq's deprecation page; defaults changed and a 404 now skips straight to the fa
 
 ## 4. Tradeoff (1-2 min)
 Autonomous planning vs deterministic workflow: the LLM chooses doc type and tasks (flexible, handles ambiguous requests)
-but is less predictable, so I constrained it: fixed tool registry, schema-validated plan, 2-10 task limit, retry with
+but is less predictable, so I constrained it: fixed tool registry, schema-validated plan, 2-14 task limit, retry with
 feedback, and never-fatal task failures. Also mention: plain loop vs LangGraph (simplicity now, extensible later via the registry).

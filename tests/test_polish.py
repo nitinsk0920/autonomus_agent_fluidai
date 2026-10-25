@@ -28,3 +28,8 @@ def test_summary_filter_never_empties_the_plan():
     plan = _plan(("Budget", "get_mock_data"), ("Executive Summary", "write_section"))
     _drop_summary_tasks(plan)
     assert len(plan.tasks) == 2  # dropping it would leave no content task, so it is kept
+
+
+def test_plan_tolerates_a_model_that_overshoots_the_task_count():
+    plan = _plan(*[(f"Section {i}", "write_section") for i in range(12)])  # real failure: model returned 12 tasks
+    assert len(plan.tasks) == 12
